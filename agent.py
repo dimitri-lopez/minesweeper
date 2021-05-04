@@ -4,11 +4,11 @@ import pickle
 
 
 THRESHOLD = 0.4
-Z_SCORE = 1.96
+Z_SCORE = 2.576
 def sortOnValue(item):
-    itemType = 1
+    itemType = 2
     if(item.action == "flag"):
-        itemType = 2
+        itemType = 1
     return (abs(item.value), itemType)
 
 def accountForRotation(y, x, rotation):
@@ -82,8 +82,14 @@ class State:
         bounds = (1.96*(variance/(safe+mine))**0.5)
         if(mean < 0):
             value = mean + bounds
+            if value > 0:
+                value = 0
+        elif(mean == 0):
+            value = 0
         else:
             value = mean - bounds
+            if value < 0:
+                value = 0
         self.surroundings[i] = value
 
     
@@ -92,24 +98,34 @@ class State:
         output = "["
         for i in self.surroundings:
             if i is None:
-                output += "{:<6}".format(str(i))
+                output += "{:<5}".format(str(i))
             elif i > 0:
-                output += " {:0.3f}".format(i)
+                output += " {:0.2f}".format(i)
             else:
-                output += "{:0.3f}".format(i)
+                output += "{:0.2f}".format(i)
+            output += ", "
+        output += "]"
+
+        output += "   ["
+        for i in self.safeMine:
+            if i is None:
+                output += "{:<6}".format(str(i))
+            else:
+                output += "({:<3}, {:>3})".format(i[0], i[1])
             output += ", "
         output += "]"
         return output
 
 
 class Action:
-    def __init__(self, action, y, x, value):
+    def __init__(self, action, y, x, value, safeMine):
         self.y = y
         self.x = x
         self.action = action
         self.value = value
+        self.safeMine = safeMine
     def __repr__(self):
-        output = "{:<8}: ({:<2}, {:>2}) value: {:<4}".format(self.action, self.y, self.x, self.value)
+        output = "{:<8}: ({:<2}, {:>2}) value: {:<4} safeMine: ({})".format(self.action, self.y, self.x, self.value, self.safeMine)
         return output
     def __eq__(self, item):
         if(self.action == item.action and self.y == item.y and self.x == item.x):
@@ -127,20 +143,23 @@ class Agent:
     learningRate = 0.1
     # discount = 0.95 # Not being used atm
     train = True
+    visibleBoard = []
 
     def newGame(self, board, train):
         self.toSearch = list()
         self.actions = list()
         self.board = board
         self.train = train
-        self.actions.append(Action("uncover", self.board.cols // 2, self.board.rows // 2, -1))
+        self.visibleBoard = [["" for i in range(self.board.cols)] for j in range(self.board.rows)]
+
+        self.actions.append(Action("uncover", self.board.cols // 2, self.board.rows // 2, -2, [0,0]))
 
     def storeStateMemory(self):
         with open("stateMemory.txt", "wb") as myFile:
             pickle.dump(self.stateMemory, myFile)
 
     def loadStateMemory(self):
-        with open("stateMemory2.txt", "rb") as myFile:
+        with open("stateMemory.txt", "rb") as myFile:
             self.stateMemory = pickle.load(myFile)
 
     def addAction(self, action):
@@ -153,7 +172,7 @@ class Agent:
 
     def getCovered(self): # This only gets called when a guess needs to be made
         y, x = self.board.getCovered()
-        self.addAction(Action("uncover", y, x, 0))
+        self.addAction(Action("uncover", y, x, 0, [0,0]))
 
     def getAction(self):
         if(len(self.actions) == 0): # If this happens...
@@ -165,10 +184,9 @@ class Agent:
         return action
 
     def takeAction(self, debug = False):
-        self.processSearch()
         if(len(self.actions) == 0): # No actions left
             self.processSearch()
-        elif(self.actions[-1].value < THRESHOLD): # Only crappy choices are available
+        elif(abs(self.actions[-1].value) < 1): # Only crappy choices are available
             self.processSearch()
 
         action = self.getAction()
@@ -181,32 +199,32 @@ class Agent:
                     self.addToSearch((dy, dx))
 
             if(debug):
-                print("Flagging: ({:<2}, {:>2})".format(y, x))
+                print("Solver's Move: Flagging: ({:<2}, {:>2})".format(y, x))
             return self.board.flag(y, x)
         elif action.action == "uncover":
             if(debug):
-                print("Moving: ({:<2}, {:>2})".format(y, x))
+                print("Solver's Move: Uncover: ({:<2}, {:>2})".format(y, x))
             return self.board.move(y, x, self)
 
-    def processFlags(self, miniBoard):
-        # Process flags first
-        for i in surrounding:
-            dy = 1 + i[0]
-            dx = 1 + i[1]
-            if(miniBoard[dy][dx] == "F"):
-                for i in surrounding:
-                    dy2 = dy + i[0]
-                    dx2 = dx + i[1]
-                    if(dy2 > 2 or dy2 < 0 or dx2 > 2 or dx2 < 0):
-                        continue
-                    if(miniBoard[dy2][dx2].isnumeric()):
-                        miniBoard[dy2][dx2] = int(miniBoard[dy2][dx2]) - 1
-                        if(miniBoard[dy2][dx2] < 0):
-                            miniBoard[dy2][dx2] = 0
+    # def processFlags(self, miniBoard):
+    #     # Process flags first
+    #     for i in surrounding:
+    #         dy = 1 + i[0]
+    #         dx = 1 + i[1]
+    #         if(miniBoard[dy][dx] == "F"):
+    #             for i in surrounding:
+    #                 dy2 = dy + i[0]
+    #                 dx2 = dx + i[1]
+    #                 if(dy2 > 2 or dy2 < 0 or dx2 > 2 or dx2 < 0):
+    #                     continue
+    #                 if(miniBoard[dy2][dx2].isnumeric()):
+    #                     miniBoard[dy2][dx2] = int(miniBoard[dy2][dx2]) - 1
+    #                     if(miniBoard[dy2][dx2] < 0):
+    #                         miniBoard[dy2][dx2] = 0
 
-                        miniBoard[dy2][dx2] = str(miniBoard[dy2][dx2])
-                miniBoard[dy][dx] = "0"
-        return miniBoard
+    #                     miniBoard[dy2][dx2] = str(miniBoard[dy2][dx2])
+    #             miniBoard[dy][dx] = "0"
+    #     return miniBoard
 
     # This will push a set of actions onto the queue
     def searchHashTable(self, miniBoard, y, x):
@@ -225,37 +243,11 @@ class Agent:
         if(rotationString in self.stateMemory): # Been seen before
             state = self.stateMemory.get(rotationString)
 
-
-        # print("original miniBoard: {}".format(miniBoard))
-        # for i in range(rotation):
-        #     miniBoard = rotate_clockwise(miniBoard)
-
-        # pause = False
-        # if(rotationString == "x00|x11|x.1|"):
-        #     pause = True
-        #     print("miniBoard: {}".format(miniBoard))
-        #     print("state: {}".format(state))
-        #     print("rotationString: {}".format(rotationString))
-            # print("rotation: {}".format(rotation))
-            # # for rot in range(4):
-            # #     print("rotation: {}".format(rot))
-            # #     print("miniboard: ", end = "")
-            # #     for i in surrounding:
-            # #         yOffset = i[0]
-            # #         xOffset = i[1]
-            # #         yOffset, xOffset = accountForRotation(yOffset, xOffset, rot)
-            # #         ay = 1 + yOffset
-            # #         ax = 1 + xOffset
-            # #         print("{}".format(miniBoard[ay][ax]), end = "")
-            # for i in surrounding:
-            #     yOffset = i[0]
-            #     xOffset = i[1]
-            #     yOffset, xOffset = accountForRotation(yOffset, xOffset, rotation)
-            #     ay = 1 + yOffset
-            #     ax = 1 + xOffset
-            #     print("{}".format(miniBoard[ay][ax]), end = "")
-            # print()
-
+        # if(y == 9 and x == 1):
+        #     print(miniBoard)
+        #     print(rotationString)
+        #     print(state)
+        #     input("heeere")
         # Grab the correct stuff...
         for i in range(len(state.surroundings)):
             value = state.surroundings[i]
@@ -284,29 +276,63 @@ class Agent:
                 state.update(i)
 
             if(value > 0):
-                self.addAction(Action("flag", dy, dx, value))
+                self.addAction(Action("flag", dy, dx, value, state.safeMine[i]))
             elif(value < 0):
-                self.addAction(Action("uncover", dy, dx, value))
+                self.addAction(Action("uncover", dy, dx, value, state.safeMine))
 
         self.stateMemory[rotationString] = state # update dictionary
 
+    def accountForFlags(self):
+        flagList = list()
+        for y in range(self.board.cols):
+            for x in range(self.board.rows):
+                piece = self.board.getSquare(y, x)
+                self.visibleBoard[y][x] = piece
+                if piece == "F":
+                    flagList.append((y,x))
+        for flagLoc in flagList:
+            y = flagLoc[0]
+            x = flagLoc[1]
+            for i in surrounding:
+                dy = y + i[0]
+                dx = x + i[1]
+                if(self.board.notInBoard(dy, dx)):
+                    continue
+                if(self.visibleBoard[dy][dx].isnumeric()):
+                    self.visibleBoard[dy][dx] = int(self.visibleBoard[dy][dx]) - 1
+                    if(self.visibleBoard[dy][dx] < 0):
+                        self.visibleBoard[dy][dx] = 0
+
+                    self.visibleBoard[dy][dx] = str(self.visibleBoard[dy][dx])
+            self.visibleBoard[y][x] = "0" # Set Flag to zero
+
+    def printBoard(self):
+        for y in range(self.board.cols):
+            for x in range(self.board.rows):
+                print(self.visibleBoard[y][x], end = "")
+            print()
+
+
     def processSearch(self):
+        if(len(self.toSearch) != 0):
+            self.accountForFlags() # Subtract surrounding and set flags equal to zero
         while len(self.toSearch) != 0:
             y, x = self.toSearch.pop()
             miniBoard = [[0 for i in range(3)] for j in range(3)]
 
+
             # Copy to miniboard
-            miniBoard[1][1] = self.board.getSquare(y, x)
+            miniBoard[1][1] = self.visibleBoard[y][x]
+            # miniBoard[1][1] = self.board.getSquare(y, x)
             for i in surrounding:
                 dy = y + i[0]
                 dx = x + i[1]
                 ny = 1 + i[0]
                 nx = 1 + i[1]
-                miniBoard[ny][nx] = self.board.getSquare(dy, dx)
-
-
-            #Process Flags
-            miniBoard = self.processFlags(miniBoard)
+                if(self.board.notInBoard(dy, dx)):
+                    miniBoard[ny][nx] = "x"
+                else:
+                    miniBoard[ny][nx] = self.visibleBoard[dy][dx]
 
             if(miniBoard[1][1] == "0"): #Flag nuked this sucker
                 for i in surrounding:
@@ -315,13 +341,12 @@ class Agent:
                     if(miniBoard[ny][nx] == "."):
                         dy = y + i[0]
                         dx = x + i[1]
-                        self.addAction(Action("uncover", dy, dx, -1))
+                        self.addAction(Action("uncover", dy, dx, -10, [0, 0]))
 
                 continue
 
             #Search hashtable
             self.searchHashTable(miniBoard, y, x)
-
         self.actions = sorted(self.actions, key = sortOnValue)
 
     def printActions(self):

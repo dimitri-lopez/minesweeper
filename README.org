@@ -2,75 +2,141 @@
 
 
 * Overview
+The most recent version of the writeup is hosted on github:
+
+https://github.com/dimitri-lopez/minesweeper
+
 This is my attempt at making a minesweeper solver using a combination of machine learning algorithms with a moderate amount of success.
+
+There are 2 modes that have been implemented.
+1. Train the machine learning algorithm
+   - This will rapidly run through simulations of minesweeper games and train the model
+2. Walk through the machine learning algorithm.
+   - On a turn by turn basis, you can see where the solver is going to search for potential moves, which moves it is planning to take in the futre, and the memory of the system that it is running on.
+
+* Installation
+The code is hosted on github as well as on [[https://replit.com/@DimitriLopez1/minesweeper][repl.it]] where the code should be able to be run within your browser.
+
+** Installation with [[https://replit.com/@DimitriLopez1/minesweeper][repl.it]]
+Follow the following link to [[https://replit.com/@DimitriLopez1/minesweeper][repl.it]].
+
+** Local Installation
+If you want the code to run on your personal machine, follow these instructions.
+
+1. Copy the git repository to your local directory:
+    git clone https://github.com/dimitri-lopez/minesweeper.git
+2. Make sure that you have the following dependencies:
+   a. Python 3.9.2
+   b. Python Packages: (`pip install package_name`)
+      a. random
+      b. sys
+      c. termcolor
+3. Run the program:
+   python3 main.py
+
 * How to Use
-The code is hosted on github as well as on [[][repl.it]]
+After running 'python3 main.py' you should be prompted with menus. Follow along with the menus.
+
+NOTE: In the walkthrough mode, it will give the solver's move like the following:
+> Solver's Turn: Uncover(y,  x)
+
+The coordinate system does not follow that of the Cartesian coordinate system. Locate the first number on the y-axis and the second number on the x-axis. Indexing also starts out at zero. This is how the game is represented for the solver.
+* Overview of Algorithm
+The minesweeper solver has parts of a Q-learning algorithm, a classifier, and a good sprinkle of heuristics.
+
+Mainly the solver is a Q-learning algorithm. Also known as a lookup table of actions with rewards for any given state. I modified the algorithm a little bit so that a state is considered a 3x3 area rather than the entire board.
+
+Basic Algorithm:
+1. Take a turn in the middle of the board
+2. *while* game not finished *do*:
+   a. Search numbers along an uncovered border and classify the uncovered square as a flag or a mine
+      - This will produce a set of actions with levels of confidence associated
+   b. Take the action with the highest confidence score
 
 
-* Minesweeper Implementation
-** UI / Coordinate System
-I want the player to give (x, y) to indicate a position to uncover / flag
+** Classifying Squares
+*** Deciding the State of a Square
+As a brief overview, for every square adjacent to an uncovered square, the subsection of the board that only includes the adjacent squares is looked at. This is then looked up in a large look up table. The lookup table stores the potential actions that can be taken on the uncovered squares.
+
+The solver first identifies uncovered number squares that are have an adjacent unsolved square.
+
+Given a board like this:
+[[./images/example_board.png]]
+
+All of the numbered images are looked at. For each number, only the immediate adjacent squares are looked at. As an example, for the only three in the board we only look at:
+[[./images/three.png]]
+
+This is then looked up in the lookup table which has a list of all possible 3x3 arrangements of squares. The table looks something like the following:
+
+`
+.21|11.|022|  :  [-1.000, None  , None  , None  ,  1.000, None  , None  , None  , ]
+124|213|...|  :  [None  , None  , None  , None  , None  ,  0.184, -0.184, -1.000, ]
+2.2|.13|202|  :  [None  ,  1.000, None  , -1.000, None  , None  , None  , None  , ]
+.0.|121|022|  :  [ 1.000, None  ,  1.000, None  , None  , None  , None  , None  , ]
+...|.2.|45.|  :  [-1.000, -1.000, -1.000, -1.000,  1.000, None  , None  ,  1.000, ]
+34.|03.|2..|  :  [None  , None  ,  1.000, None  ,  1.000, None  ,  1.000, -1.000, ]
+...
+`
+
+On the left hand side of the `:` is the string representation of the board and on the right hand side is the value associated with an unmarked square. Squares that should be flagged have a positive value and squares that should be uncovered have a negative value.
+
+In our example with the number 3, three actions are thrown into a queue of actions with 100 percent certainty. All three uncovered squares will be flagged in subsequent turns.
+
+The total number of entries, if every single combination is seen is as follows:
+
+> 3x3 board means there is 9 total spots
+
+> There are 12 possible combinations (0-8, ".", "F")
+
+> This leaves us with a total of $9^{12}$ possible combinations
+
+> Since any rotation of the board is equivalent, the total size of the table is actually much less
+
+*** Training the Model
+1. When the model is being trained, it queries the board at each unmarked square and stores the result within the table.
+2. The number of times each square appeared safe and as a mine is recorded.
+   a. Each time it appeared safe a `-1` is added to the dataset and each time a mine is seen a `1` is added to the dataset.
+3. The value associated with an uncovered squared is simply the lower bound (the one closest to zero) of a 99 percent confidence interval.
+
+Running only several hunderd iterations will produce something that has a high win rate on the easy difficulty.
+
+* Results
+A win rate of 66% on the easy difficulty can be achieved in around 10,000 iterations which is quite low all things considered. With lots of training, a win rate of 80% or higher is seen on the easy difficulty. Considering that 30+ "correct" moves need to be made (easy difficulty), it's fairly impressive.
+
+I still want to see how well it does on other difficulties. Whether or not training in one mode carries to the others (which it should).
+
+Fleshing out the results is much needed...
+* Caveats
+When starting this project, it became pretty apparent that using a look up table, or any machine learning algorithm for that matter, is not the optimal way of solving minesweeper. Minesweeper is a fairly simple game. To have a "perfect" solver, it would be pretty easy to numerate over all possible board combinations for the covered edges (really not that hard to do) and then calculate the chances that each covered square is a mine.
+
+This would lead a theoretically perfect solver. Such a solver would be quicker than what was implemented here and would take up a lot less memory. It also wouldn't need to be trained.
+
+I really like the game minesweeper, and wanted to take a stab at a machine learning algorithm. The algorithm that I implemented here is pretty much the same way that I learned how to play minesweeper and how good players get insanely fast times. Through pattern recognition...
+
+* Concluding Thoughts
+
+I have spent a fairly large chunk of time playing minesweeper in the past. Over several months of playing (mainly at school) I was able to get a sub 40 second run on the intermediate difficulty. Definitely not the most impressive of times, but something that I was proud of. When showing off to others, or even watching others, it quickly became apparent that the way an experienced player moves is much different of a novice.
+
+An experienced player relies on pattern recognition while a novice will take their time and deductively figure out which piece should be flagged. While deduction will give you a far better win rate, a low time is much more impressive and therefore relying on pattern recognition is the optimal strategy.
+
+I have implemented an algorithm that models how pattern recognition develops over time. While this is not the most optimal strategy for computers (see caveat section), it was a fun challenge as well as led to some neat insight. I followed a Q-learning algorithm which is essentialy a large look-up table for any state the agent can run into and possible actions associated with each state.
+
+More than anything, this project illuminated what "learning" is, both for humans and for a machine. As an agent gains more experience with a situation, it updates how its actions affect the environment, and these changes are noted. After a large chunck of experience, bountiful actions can be taken with an increasing amount of confidence. A human playing minesweeper will quickly become better at picking up common patterns and acting upon them quite quickly. Storing information in a look-up table accomplishes the exact same task, even if it isn't as efficient as a human.
+
+After noting the similarities in learing, it made me question what about human actions that is considered intelligent. This is what a behaviorist would avocate for. A human and a machine "learn" in the exact same way. The action that any human takes given their current environment is in part a function of their past experiences, akin to what a look-up table does. Intelligence of an agent is often determined by how they act. This is how we come to the conclusion that other humans are intelligent. It's a fairly common conclusion to say that your actions are in part determined by your past experiences. In this sense, an action is a product of the environment at hand, biological / mechanical tendencies, and the experiences that the agent has. By this definition, there is very little that is different between that of the actions between a human and a machine.
+
+One thing that humans are better at is creating abstractions. If a human and a machine are given the same set of experiences, the human will be far better at extrapolating from these experiences. Theoretically a machine could match a human given enough training. If the set of all possible environments can be enumerated over, then surely a computer can be trained to act akin to a human and therefore would be intelligent. The amount of training, and memory would be astronomical.
+
+The idea of compression also peaked my interest. When I originally started researching possible machine learning algorithms, I ran into an alternate version of Q-learning called deep Q-learning. The difference between the two is that a deep Q-learning algorithm uses a neural network to *approximate* the look-up table. The neural network is essentialy a compressed (and slightly faulty) version of the look-up table.
+
+I had run into the work of Marcus Hutter when taking Minds and Machines and his [[http://prize.hutter1.net/][Compressing Human Knowledge]] prize. I haven't looked into his work too much, but he has the interesting idea of "Being able to compress well is closely related to intelligence...". A neural network, which mimics the way a brain works, can essentially compress a look-up table, his idea makes a fair amount of sense. Also abstraction is often associated with intelligence, and it quickly becomes obvious that abstraction is crucial for efficient compression of ideas.
+
+I know Bram's love for hounding on the Turing Test. Hutter's [[http://prize.hutter1.net/][prize]] might be an interesting alternative to talk about. It draws strict lines as to what should be considered intelligent as well as having real and useful applications rather than improving on "smoke and mirrors". The link between compression and intelligence is nowhere near as flashy or obvious (I am not sure I fully understand it) as Turing's musings. Hutter's work is something that I would like to look into in the future.
 
 
-Board:
-10 | . . . . . . . . . .
-09 | . . . . . . . . . .
-08 | . . . . . . . . . .
-07 | . . . . . . . . . .
-06 | . . . . . . . . . .
-05 | . . . . . . . . . .
-04 | . . . . . . . . . .
-03 | . . . . . . . . . .
-02 | . . . . . . . . . .
-01 | . . . . . . . . . .
-   +--------------------
-     1 2 3 4 5 6 7 8 9 0
-     0 0 0 0 0 0 0 0 0 1
-
-Input: x y
-Uncover: [y-1][x-1]
-Input: f x y  <- Flag variant
-Flag: [y-1][x-1]
-
-for y in range(len(board)):
-    for x in range(len(board[0])):
-        print(board[y][x])
-    print()
-** Placing Mines
-Recursive function that randomly places a mine if the square doesn't already have the mine.
-
-placeMine():
-    if empty:
-
-
-placeMines(mines):
-    currentMines = 0
-    while currentMines < mines:
-        if placeMine():
-            currentMines++;
-** First Move
-Will clear mines so that a 0 is where the player clicks.
-
-Simply count and remove the mines in the surrounding squares and then call placeMines once again.
-
-Then the numbers for each mine will be assigned
-
-** Numbers
-Assigned after the first move by the player. This ensures that numbers are only calculated once.
-
-Loop over squares and check surrounding squares for a mine, increment the number if there is a mine.
-** Boards
-- Two boards are needed
-  + Keep the state of the game
-  + Keep what the player can see
-*** Game State Board
-- Needs the following:
-  + Numbers 0-8
-  + Mines
-*** Visible Board
-- Needs the following:
-  + Flag
-  + Covered
-  + Uncovered
-*** Printing Board
-Do a check on the visible board, if uncovered print the game state board
+* Future Plans
+- Flesh out the results section
+- Work out any possible bugs that are still lingering
+  + I am pretty sure that the win rate should be higher than what it is currently.
+- Implement a neural network to approximate the look-up table
+- Read into Hutter's work on compression being akin to intelligence

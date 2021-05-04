@@ -278,3 +278,71 @@ x11
 x..
   :  [None, None, None, None, None, None, None, None]
 --------
+
+* Minesweeper Implementation
+** UI / Coordinate System
+I want the player to give (x, y) to indicate a position to uncover / flag
+
+
+Board:
+10 | . . . . . . . . . .
+09 | . . . . . . . . . .
+08 | . . . . . . . . . .
+07 | . . . . . . . . . .
+06 | . . . . . . . . . .
+05 | . . . . . . . . . .
+04 | . . . . . . . . . .
+03 | . . . . . . . . . .
+02 | . . . . . . . . . .
+01 | . . . . . . . . . .
+   +--------------------
+     1 2 3 4 5 6 7 8 9 0
+     0 0 0 0 0 0 0 0 0 1
+
+Input: x y
+Uncover: [y-1][x-1]
+Input: f x y  <- Flag variant
+Flag: [y-1][x-1]
+
+for y in range(len(board)):
+    for x in range(len(board[0])):
+        print(board[y][x])
+    print()
+** Placing Mines
+Recursive function that randomly places a mine if the square doesn't already have the mine.
+
+placeMine():
+    if empty:
+
+
+placeMines(mines):
+    currentMines = 0
+    while currentMines < mines:
+        if placeMine():
+            currentMines++;
+** First Move
+Will clear mines so that a 0 is where the player clicks.
+
+Simply count and remove the mines in the surrounding squares and then call placeMines once again.
+
+Then the numbers for each mine will be assigned
+
+** Numbers
+Assigned after the first move by the player. This ensures that numbers are only calculated once.
+
+Loop over squares and check surrounding squares for a mine, increment the number if there is a mine.
+** Boards
+- Two boards are needed
+  + Keep the state of the game
+  + Keep what the player can see
+*** Game State Board
+- Needs the following:
+  + Numbers 0-8
+  + Mines
+*** Visible Board
+- Needs the following:
+  + Flag
+  + Covered
+  + Uncovered
+*** Printing Board
+Do a check on the visible board, if uncovered print the game state board

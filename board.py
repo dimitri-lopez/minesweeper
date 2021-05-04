@@ -16,15 +16,15 @@ class AgentBoard:
     flags = 0
 
 
-    def __init__(self, rows, cols, mines, randomSeed = 0):
-        self.rows = rows
-        self.cols = cols
-        self.mines = mines
+    def __init__(self, opts):
+        self.rows = int(opts[0])
+        self.cols = int(opts[1])
+        self.mines = int(opts[2])
 
-        self.board = [[0 for i in range(cols)] for j in range(rows)]
-        self.visible = [[0 for i in range(cols)] for j in range(rows)]
+        self.board = [[0 for i in range(self.cols)] for j in range(self.rows)]
+        self.visible = [[0 for i in range(self.cols)] for j in range(self.rows)]
 
-        self.placeMines(mines)
+        self.placeMines(self.mines)
 
         # if(randomSeed != 0): # random board
             # random.seed(randomSeed)
@@ -124,7 +124,7 @@ class AgentBoard:
             "green",    #2
             "red",      #3
             "yellow",   #4
-            "grey",     #5
+            "white",    #5
             "magenta",  #6
             "cyan",     #7
             "white"]    #8
