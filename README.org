@@ -17,8 +17,14 @@ There are 2 modes that have been implemented.
 * Installation
 The code is hosted on github as well as on [[https://replit.com/@DimitriLopez1/minesweeper][repl.it]] where the code should be able to be run within your browser.
 
+repl.it has a limit on the file size that is allowed. This means that the amount of memory that can be stored as states is greatly limited. On my local computer a win rate of 66% is easily done within 1,000 repititions while on repl.it it caps out at around 20%.
+
+repl.it is a good show that the code does work if you aren't able to get it to work properly locally.
+
 ** Installation with [[https://replit.com/@DimitriLopez1/minesweeper][repl.it]]
 Follow the following link to [[https://replit.com/@DimitriLopez1/minesweeper][repl.it]].
+
+Hit the green play button. Everything should get installed and you should be able to interact with the terminal.
 
 ** Local Installation
 If you want the code to run on your personal machine, follow these instructions.

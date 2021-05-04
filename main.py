@@ -74,8 +74,6 @@ def train(difficulty, iterations, load = False):
 
 def main():
     difficulty = EASY_DIFFICULTY
-    print(difficulty)
-    AgentBoard(difficulty)
     print("Minesweeper Solver...")
     while True:
         diff = "Easy"
