@@ -23,16 +23,16 @@ Follow the following link to [[https://replit.com/@DimitriLopez1/minesweeper][re
 ** Local Installation
 If you want the code to run on your personal machine, follow these instructions.
 
-1. Copy the git repository to your local directory:
-
+- Copy the git repository to your local directory:
 ~git clone https://github.com/dimitri-lopez/minesweeper.git~
-2. Make sure that you have the following dependencies:
-   a. Python 3.9.2
-   b. Python Packages: ~pip install package_name~
-      a. random
-      b. sys
-      c. termcolor
-3. Run the program:
+
+- Make sure that you have the following dependencies:
+  - Python 3.9.2
+  - Python Packages: ~pip install package_name~
+    + random
+    + sys
+    + termcolor
+- Run the program:
 ~python3 main.py~
 
 * How to Use
@@ -63,23 +63,14 @@ As a brief overview, for every square adjacent to an uncovered square, the subse
 The solver first identifies uncovered number squares that are have an adjacent unsolved square.
 
 Given a board like this:
+
 [[./images/example_board.png]]
 
 All of the numbered images are looked at. For each number, only the immediate adjacent squares are looked at. As an example, for the only three in the board we only look at:
+
 [[./images/three.png]]
 
-This is then looked up in the lookup table which has a list of all possible 3x3 arrangements of squares. The table looks something like the following:
-
-
-#+BEGIN_VERSE
-    .21|11.|022|  :  [-1.000, None  , None  , None  ,  1.000, None  , None  , None  , ]
-    124|213|...|  :  [None  , None  , None  , None  , None  ,  0.184, -0.184, -1.000, ]
-    2.2|.13|202|  :  [None  ,  1.000, None  , -1.000, None  , None  , None  , None  , ]
-    .0.|121|022|  :  [ 1.000, None  ,  1.000, None  , None  , None  , None  , None  , ]
-    ...|.2.|45.|  :  [-1.000, -1.000, -1.000, -1.000,  1.000, None  , None  ,  1.000, ]
-    34.|03.|2..|  :  [None  , None  ,  1.000, None  ,  1.000, None  ,  1.000, -1.000, ]
-    ...
-#+END_VERSE
+This is then looked up in the lookup table which has a list of all possible 3x3 arrangements of squares.
 
 
 On the left hand side of the `:` is the string representation of the board and on the right hand side is the value associated with an unmarked square. Squares that should be flagged have a positive value and squares that should be uncovered have a negative value.
@@ -88,13 +79,13 @@ In our example with the number 3, three actions are thrown into a queue of actio
 
 The total number of entries, if every single combination is seen is as follows:
 
-~3x3 board means there is 9 total spots~
+~3x3 board means there is 9 total spots.~
 
-~There are 12 possible combinations (0-8, ".", "F")~
+~There are 12 possible combinations (0-8, ".", "F", "x"). An "x" is a spot that is out of bounds.~
 
-~This leaves us with a total of $9^{12}$ possible combinations~
+~This leaves us with a total of $9^{12}$ possible combinations.~
 
-~Since any rotation of the board is equivalent, the total size of the table is actually much less~
+~Since any rotation of the board is equivalent, the total size of the table is actually much less.~
 
 *** Training the Model
 1. When the model is being trained, it queries the board at each unmarked square and stores the result within the table.
